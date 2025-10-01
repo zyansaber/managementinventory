@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Connectivity Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .success { color: green; }
+    .error { color: red; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; }
+    .btn { background: #4a6cf7; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>API Connectivity Test</h1>
+  <p>This page tests connectivity to the API server and shows debugging information.</p>
+  
+  <button id="testBtn" class="btn">Test API Connection</button>
+  <div id="result" style="margin-top: 20px;"></div>
+  
+  <script>
+    document.getElementById('testBtn').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing connection...</p>';
+      
+      try {
+        const API_HOSTNAME = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+        const API_URL = `http://${API_HOSTNAME}:3333`;
+        
+        resultDiv.innerHTML += `<p>Attempting to connect to: ${API_URL}/health</p>`;
+        
+        // Check browser network capabilities
+        resultDiv.innerHTML += `<p>Browser online: ${navigator.onLine}</p>`;
+        resultDiv.innerHTML += `<p>Current page URL: ${window.location.href}</p>`;
+        
+        // Set timeout using AbortController
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`${API_URL}/health`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          cache: 'no-cache',
+          credentials: 'omit',
+          mode: 'cors'
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const text = await response.text();
+          resultDiv.innerHTML += `<p class="success">✅ API is online! Response: ${text}</p>`;
+        } else {
+          resultDiv.innerHTML += `<p class="error">❌ API returned error: ${response.status}</p>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML += `<p class="error">❌ Connection failed: ${error.name} - ${error.message}</p>`;
+        
+        // Additional debugging info
+        resultDiv.innerHTML += `<pre>
+Error Details:
+- Name: ${error.name}
+- Message: ${error.message}
+- Stack: ${error.stack}
+</pre>`;
+      }
+      
+      // Add network information
+      resultDiv.innerHTML += `<h3>Network Information:</h3>`;
+      resultDiv.innerHTML += `<pre>
+User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Online: ${navigator.onLine}
+Connection Type: ${navigator.connection ? navigator.connection.effectiveType : 'unknown'}
+</pre>`;
+    });
+  </script>
+</body>
+</html>
